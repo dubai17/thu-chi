@@ -1,0 +1,563 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Wallet, 
+  TrendingUp, 
+  Utensils, 
+  GraduationCap, 
+  Home, 
+  Car, 
+  Gift, 
+  MoreHorizontal, 
+  Briefcase,
+  Plus,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Calendar,
+  X,
+  Trash2,
+  PieChart,
+  CreditCard,
+  Coins,
+  Edit3
+} from 'lucide-react';
+
+// --- CẤU HÌNH DANH MỤC ---
+const CATEGORIES = {
+  expense: [
+    { id: 'sinh-hoat', label: 'Sinh hoạt', icon: Utensils, color: 'bg-orange-100 text-orange-600' },
+    { id: 'hoc-hanh', label: 'Học hành', icon: GraduationCap, color: 'bg-blue-100 text-blue-600' },
+    { id: 'gia-dinh', label: 'Gia đình', icon: Home, color: 'bg-indigo-100 text-indigo-600' },
+    { id: 'xe-co', label: 'Xe cộ', icon: Car, color: 'bg-slate-100 text-slate-600' },
+    { id: 'hieu-hi', label: 'Hiếu hỉ', icon: Gift, color: 'bg-pink-100 text-pink-600' },
+    { id: 'dau-tu-chi', label: 'Đầu tư', icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
+    { id: 'khac-chi', label: 'Chi khác', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-600' },
+  ],
+  income: [
+    { id: 'luong', label: 'Tiền lương', icon: Wallet, color: 'bg-green-100 text-green-600' },
+    { id: 'kinh-doanh', label: 'Kinh doanh', icon: Briefcase, color: 'bg-blue-100 text-blue-600' },
+    { id: 'dau-tu-thu', label: 'Lợi nhuận ĐT', icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
+    { id: 'khac-thu', label: 'Thu khác', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-600' },
+  ]
+};
+
+// --- HÀM TIỆN ÍCH ---
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+};
+
+const getCategoryDetails = (type, id) => {
+  const list = CATEGORIES[type];
+  return list.find(c => c.id === id) || { label: 'Không rõ', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-500' };
+};
+
+// Hàm kiểm tra ngày có thuộc tuần hiện tại không (Thứ 2 - CN)
+const isThisWeek = (dateStr) => {
+  const now = new Date();
+  const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); // 1=Mon, 7=Sun
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - dayOfWeek + 1);
+  startOfWeek.setHours(0,0,0,0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23,59,59,999);
+  
+  const txDate = new Date(dateStr);
+  return txDate >= startOfWeek && txDate <= endOfWeek;
+};
+
+export default function App() {
+  // --- STATE ---
+  const [transactions, setTransactions] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // State Bộ Lọc
+  const [filterPeriod, setFilterPeriod] = useState('month'); // 'date', 'week', 'month', 'year', 'all'
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'expense'
+  
+  // State Quản lý Tài khoản thực tế
+  const [accounts, setAccounts] = useState({ cash: 0, bank: 0 });
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [tempAccounts, setTempAccounts] = useState({ cash: '', bank: '' });
+
+  // Form State
+  const [formType, setFormType] = useState('expense');
+  const [formAmount, setFormAmount] = useState('');
+  const [formCategory, setFormCategory] = useState(CATEGORIES.expense[0].id);
+  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formNote, setFormNote] = useState('');
+
+  // Lấy dữ liệu từ LocalStorage khi khởi chạy
+  useEffect(() => {
+    const savedTx = localStorage.getItem('cashflow_transactions');
+    const savedAcc = localStorage.getItem('cashflow_accounts');
+    if (savedTx) setTransactions(JSON.parse(savedTx));
+    if (savedAcc) setAccounts(JSON.parse(savedAcc));
+  }, []);
+
+  // Lưu dữ liệu vào LocalStorage
+  useEffect(() => {
+    localStorage.setItem('cashflow_transactions', JSON.stringify(transactions));
+  }, [transactions]);
+
+  useEffect(() => {
+    localStorage.setItem('cashflow_accounts', JSON.stringify(accounts));
+  }, [accounts]);
+
+  // --- LỌC & THỐNG KÊ ---
+  const periodTransactions = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const currMonthStr = todayStr.substring(0, 7); // YYYY-MM
+    const currYearStr = todayStr.substring(0, 4);  // YYYY
+
+    return transactions.filter(tx => {
+      if (filterPeriod === 'all') return true;
+      if (filterPeriod === 'date') return tx.date === filterDate;
+      if (filterPeriod === 'day') return tx.date === todayStr; // Tương thích dữ liệu cũ
+      if (filterPeriod === 'month') return tx.date.startsWith(currMonthStr);
+      if (filterPeriod === 'year') return tx.date.startsWith(currYearStr);
+      if (filterPeriod === 'week') return isThisWeek(tx.date);
+      return true;
+    });
+  }, [transactions, filterPeriod, filterDate]);
+
+  const { totalIncome, totalExpense } = useMemo(() => {
+    return periodTransactions.reduce(
+      (acc, curr) => {
+        if (curr.type === 'income') acc.totalIncome += curr.amount;
+        else acc.totalExpense += curr.amount;
+        return acc;
+      },
+      { totalIncome: 0, totalExpense: 0 }
+    );
+  }, [periodTransactions]);
+
+  const displayTransactions = useMemo(() => {
+    return periodTransactions.filter(tx => {
+      if (filterType !== 'all' && tx.type !== filterType) return false;
+      return true;
+    });
+  }, [periodTransactions, filterType]);
+
+  const totalAccountBalance = accounts.cash + accounts.bank;
+
+  // Tính toán % cho biểu đồ
+  const totalFlow = totalIncome + totalExpense;
+  const expensePct = totalFlow === 0 ? 0 : Math.round((totalExpense / totalFlow) * 100);
+  const incomePct = totalFlow === 0 ? 0 : 100 - expensePct;
+  const chartStyle = totalFlow === 0 
+    ? { background: '#f3f4f6' } // xám nếu trống
+    : { background: `conic-gradient(#ef4444 0% ${expensePct}%, #22c55e ${expensePct}% 100%)` };
+
+  // Nhóm giao dịch theo ngày để hiển thị
+  const groupedTransactions = useMemo(() => {
+    const groups = displayTransactions.reduce((acc, curr) => {
+      if (!acc[curr.date]) acc[curr.date] = [];
+      acc[curr.date].push(curr);
+      return acc;
+    }, {});
+    
+    return Object.keys(groups)
+      .sort((a, b) => new Date(b) - new Date(a))
+      .map(date => ({
+        date,
+        items: groups[date].sort((a, b) => b.timestamp - a.timestamp)
+      }));
+  }, [displayTransactions]);
+
+  // --- XỬ LÝ SỰ KIỆN ---
+  const handleAmountChange = (e, setter) => {
+    const rawValue = e.target.value.replace(/[^0-9]/g, '');
+    setter(rawValue);
+  };
+
+  const handleSaveTransaction = (e) => {
+    e.preventDefault();
+    if (!formAmount || parseInt(formAmount) <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
+
+    const newTx = {
+      id: Date.now().toString(),
+      type: formType,
+      amount: parseInt(formAmount),
+      category: formCategory,
+      date: formDate,
+      note: formNote,
+      timestamp: Date.now()
+    };
+
+    setTransactions([newTx, ...transactions]);
+    setIsModalOpen(false);
+    setFormAmount('');
+    setFormNote('');
+  };
+
+  const handleDelete = (id) => {
+    if(window.confirm("Bạn có chắc chắn muốn xóa giao dịch này?")) {
+      setTransactions(transactions.filter(tx => tx.id !== id));
+    }
+  };
+
+  const handleSaveAccounts = (e) => {
+    e.preventDefault();
+    setAccounts({
+      cash: parseInt(tempAccounts.cash) || 0,
+      bank: parseInt(tempAccounts.bank) || 0
+    });
+    setIsAccountModalOpen(false);
+  };
+
+  const openAccountModal = () => {
+    setTempAccounts({
+      cash: accounts.cash.toString(),
+      bank: accounts.bank.toString()
+    });
+    setIsAccountModalOpen(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex justify-center font-sans text-gray-800">
+      <div className="w-full max-w-md bg-gray-50 shadow-xl relative pb-24 min-h-screen overflow-hidden">
+        
+        {/* HEADER & TÀI KHOẢN THỰC TẾ */}
+        <div className="bg-indigo-600 text-white p-5 rounded-b-[2rem] shadow-md z-10 relative">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-lg font-bold tracking-wide flex items-center">
+              <Wallet size={20} className="mr-2" /> Dòng Tiền
+            </h1>
+            <button onClick={openAccountModal} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
+              <Edit3 size={18} />
+            </button>
+          </div>
+          
+          <div className="text-center mb-5">
+            <p className="text-sm text-indigo-200 mb-1">Tổng Tài Sản Hiện Tại</p>
+            <h2 className="text-3xl font-bold tracking-tight">
+              {formatCurrency(totalAccountBalance)}
+            </h2>
+          </div>
+
+          <div className="flex justify-between bg-black/10 rounded-2xl p-4 border border-white/10">
+            <div className="flex-1 flex items-center border-r border-white/10">
+              <div className="bg-white/20 p-2 rounded-lg mr-3"><Coins size={20} className="text-yellow-300"/></div>
+              <div>
+                <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Tiền mặt</p>
+                <p className="font-semibold text-sm">{formatCurrency(accounts.cash)}</p>
+              </div>
+            </div>
+            <div className="flex-1 flex items-center pl-4">
+              <div className="bg-white/20 p-2 rounded-lg mr-3"><CreditCard size={20} className="text-blue-300"/></div>
+              <div>
+                <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Ngân hàng</p>
+                <p className="font-semibold text-sm">{formatCurrency(accounts.bank)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BÁO CÁO & BỘ LỌC */}
+        <div className="px-4 pt-6 -mt-4">
+          <h3 className="font-bold text-gray-800 mb-3 px-1">Báo cáo thu chi</h3>
+          
+          {/* Thanh lọc */}
+          <div className="flex bg-white rounded-xl p-1 mb-2 shadow-sm border border-gray-100 overflow-x-auto hide-scrollbar">
+            {[
+              { id: 'date', label: 'Ngày' },
+              { id: 'week', label: 'Tuần' },
+              { id: 'month', label: 'Tháng' },
+              { id: 'year', label: 'Năm' },
+              { id: 'all', label: 'Tất cả' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterPeriod(tab.id)}
+                className={`flex-1 min-w-[60px] py-1.5 px-2 text-xs font-medium rounded-lg transition-all
+                  ${filterPeriod === tab.id ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Lọc theo ngày cụ thể */}
+          {filterPeriod === 'date' && (
+            <div className="mb-4 flex items-center bg-white rounded-xl p-2 shadow-sm border border-gray-100 animate-fade-in">
+              <Calendar size={18} className="text-indigo-400 mr-2 ml-1" />
+              <input 
+                type="date" 
+                value={filterDate} 
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="w-full bg-transparent outline-none text-sm font-medium text-gray-700"
+              />
+            </div>
+          )}
+
+          {/* Thống kê & Biểu đồ */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-6">
+            <div className="flex-1 space-y-2 pr-4">
+              <div 
+                onClick={() => setFilterType(prev => prev === 'income' ? 'all' : 'income')}
+                className={`cursor-pointer rounded-xl p-2 transition-all border-2 ${filterType === 'income' ? 'border-green-400 bg-green-50 shadow-sm' : 'border-transparent hover:bg-gray-50'}`}
+                title="Nhấn để chỉ xem các khoản thu"
+              >
+                <div className="flex items-center text-green-500 text-xs font-semibold uppercase mb-1">
+                  <ArrowDownCircle size={14} className="mr-1" /> Tổng Thu
+                </div>
+                <p className="font-bold text-gray-800">{formatCurrency(totalIncome)}</p>
+              </div>
+              <div 
+                onClick={() => setFilterType(prev => prev === 'expense' ? 'all' : 'expense')}
+                className={`cursor-pointer rounded-xl p-2 transition-all border-2 ${filterType === 'expense' ? 'border-red-400 bg-red-50 shadow-sm' : 'border-transparent hover:bg-gray-50'}`}
+                title="Nhấn để chỉ xem các khoản chi"
+              >
+                <div className="flex items-center text-red-500 text-xs font-semibold uppercase mb-1">
+                  <ArrowUpCircle size={14} className="mr-1" /> Tổng Chi
+                </div>
+                <p className="font-bold text-gray-800">{formatCurrency(totalExpense)}</p>
+              </div>
+            </div>
+
+            {/* Biểu đồ Donut */}
+            <div className="flex-shrink-0 flex flex-col items-center justify-center w-28 h-28">
+              <div className="relative w-24 h-24 rounded-full shadow-inner flex items-center justify-center transition-all duration-500" style={chartStyle}>
+                <div className="absolute inset-2.5 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
+                  {totalFlow > 0 ? (
+                    <>
+                      <span className="text-xs font-bold text-red-500 leading-tight">{expensePct}%</span>
+                      <span className="text-[9px] text-gray-400 uppercase">Chi</span>
+                    </>
+                  ) : (
+                    <PieChart size={20} className="text-gray-300" />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* DANH SÁCH GIAO DỊCH */}
+        <div className="px-4">
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h3 className="font-bold text-gray-800">
+              Giao dịch {filterType === 'income' ? 'thu' : filterType === 'expense' ? 'chi' : ''} {filterPeriod !== 'all' ? 'đã lọc' : ''}
+            </h3>
+            {filterType !== 'all' && (
+              <button 
+                onClick={() => setFilterType('all')}
+                className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg"
+              >
+                Hủy lọc Thu/Chi
+              </button>
+            )}
+          </div>
+          
+          {groupedTransactions.length === 0 ? (
+            <div className="text-center py-8 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+              <p className="text-sm">Không có giao dịch nào trong khoảng thời gian này.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {groupedTransactions.map((group) => {
+                const dateObj = new Date(group.date);
+                const isToday = group.date === new Date().toISOString().split('T')[0];
+                const dateString = isToday ? 'Hôm nay' : dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                return (
+                  <div key={group.date}>
+                    <h4 className="text-xs font-bold text-indigo-400 mb-2 px-1">{dateString}</h4>
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                      {group.items.map((tx, index) => {
+                        const { icon: Icon, label, color } = getCategoryDetails(tx.type, tx.category);
+                        const isExpense = tx.type === 'expense';
+                        
+                        return (
+                          <div key={tx.id} className={`flex items-center p-3 sm:p-4 hover:bg-gray-50 group
+                            ${index !== group.items.length - 1 ? 'border-b border-gray-50' : ''}`}>
+                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 ${color}`}>
+                              <Icon size={18} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{label}</p>
+                              {tx.note && <p className="text-xs text-gray-500 truncate mt-0.5">{tx.note}</p>}
+                            </div>
+                            <div className="text-right flex items-center">
+                              <span className={`font-semibold text-sm sm:text-base ${isExpense ? 'text-red-500' : 'text-green-500'}`}>
+                                {isExpense ? '-' : '+'}{formatCurrency(tx.amount)}
+                              </span>
+                              <button 
+                                onClick={() => handleDelete(tx.id)}
+                                className="ml-2 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* NÚT THÊM NHANH (FAB) */}
+        <div className="fixed bottom-6 left-0 w-full flex justify-center pointer-events-none z-20">
+          <div className="w-full max-w-md relative">
+            <button 
+              onClick={() => {
+                setFormType('expense');
+                setFormCategory(CATEGORIES.expense[0].id);
+                setFormDate(new Date().toISOString().split('T')[0]);
+                setIsModalOpen(true);
+              }}
+              className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/40 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all pointer-events-auto"
+            >
+              <Plus size={28} />
+            </button>
+          </div>
+        </div>
+
+        {/* MODAL CẬP NHẬT TÀI KHOẢN */}
+        {isAccountModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
+              <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
+                <h3 className="font-bold text-gray-800">Kiểm kê tài sản</h3>
+                <button onClick={() => setIsAccountModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={20}/></button>
+              </div>
+              <form onSubmit={handleSaveAccounts} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Tiền mặt hiện tại</label>
+                  <div className="relative">
+                    <input
+                      type="text" inputMode="numeric"
+                      value={tempAccounts.cash ? new Intl.NumberFormat('vi-VN').format(tempAccounts.cash) : ''}
+                      onChange={(e) => handleAmountChange(e, (val) => setTempAccounts({...tempAccounts, cash: val}))}
+                      className="w-full text-xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">đ</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Tiền trong Ngân hàng</label>
+                  <div className="relative">
+                    <input
+                      type="text" inputMode="numeric"
+                      value={tempAccounts.bank ? new Intl.NumberFormat('vi-VN').format(tempAccounts.bank) : ''}
+                      onChange={(e) => handleAmountChange(e, (val) => setTempAccounts({...tempAccounts, bank: val}))}
+                      className="w-full text-xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">đ</span>
+                  </div>
+                </div>
+                <button type="submit" className="w-full py-3 mt-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
+                  Lưu thay đổi
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL THÊM GIAO DỊCH (Giữ nguyên cấu trúc, chỉnh sửa CSS chút xíu) */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up sm:animate-fade-in">
+              <div className="flex justify-between items-center p-5 border-b border-gray-100">
+                <h3 className="font-bold text-lg">Thêm Giao Dịch</h3>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+                  <X size={20} className="text-gray-600" />
+                </button>
+              </div>
+
+              <div className="p-5 overflow-y-auto max-h-[80vh]">
+                <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                  <button
+                    className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${formType === 'expense' ? 'bg-white shadow text-red-600' : 'text-gray-500'}`}
+                    onClick={() => { setFormType('expense'); setFormCategory(CATEGORIES.expense[0].id); }}
+                  >
+                    Khoản Chi
+                  </button>
+                  <button
+                    className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${formType === 'income' ? 'bg-white shadow text-green-600' : 'text-gray-500'}`}
+                    onClick={() => { setFormType('income'); setFormCategory(CATEGORIES.income[0].id); }}
+                  >
+                    Khoản Thu
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveTransaction}>
+                  <div className="mb-6">
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Số Tiền (VNĐ)</label>
+                    <div className="relative">
+                      <input
+                        type="text" inputMode="numeric" placeholder="0" autoFocus
+                        value={formAmount ? new Intl.NumberFormat('vi-VN').format(formAmount) : ''}
+                        onChange={(e) => handleAmountChange(e, setFormAmount)}
+                        className={`w-full text-3xl font-bold border-b-2 bg-transparent pb-2 outline-none transition-colors
+                          ${formType === 'expense' ? 'text-red-600 border-red-200 focus:border-red-500' : 'text-green-600 border-green-200 focus:border-green-500'}`}
+                      />
+                      <span className="absolute right-0 bottom-3 text-gray-400 font-medium">đ</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Danh Mục</label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {CATEGORIES[formType].map((cat) => {
+                        const isSelected = formCategory === cat.id;
+                        const Icon = cat.icon;
+                        return (
+                          <div key={cat.id} onClick={() => setFormCategory(cat.id)} className="flex flex-col items-center cursor-pointer">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 mb-1
+                              ${isSelected ? cat.color + ' ring-2 ring-offset-2 ring-indigo-500 shadow-md scale-105' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                            >
+                              <Icon size={24} />
+                            </div>
+                            <span className={`text-[11px] text-center leading-tight mt-1 ${isSelected ? 'font-bold text-gray-800' : 'text-gray-500'}`}>
+                              {cat.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center border border-gray-200 rounded-xl p-3 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                      <Calendar className="text-gray-400 mr-3" size={20} />
+                      <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} required className="w-full bg-transparent outline-none text-gray-700" />
+                    </div>
+                    
+                    <div className="flex items-center border border-gray-200 rounded-xl p-3 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                      <MoreHorizontal className="text-gray-400 mr-3" size={20} />
+                      <input type="text" placeholder="Ghi chú thêm (Tùy chọn)..." value={formNote} onChange={(e) => setFormNote(e.target.value)} className="w-full bg-transparent outline-none text-gray-700" />
+                    </div>
+                  </div>
+
+                  <button type="submit" className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-transform active:scale-[0.98]
+                      ${formType === 'expense' ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30' : 'bg-green-500 hover:bg-green-600 shadow-green-500/30'}`}
+                  >
+                    Lưu {formType === 'expense' ? 'Khoản Chi' : 'Khoản Thu'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}} />
+    </div>
+  );
+}

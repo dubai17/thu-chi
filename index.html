@@ -1,69 +1,75 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Wallet, 
-  TrendingUp, 
-  Utensils, 
-  GraduationCap, 
-  Home, 
-  Car, 
-  Gift, 
-  MoreHorizontal, 
-  Briefcase,
-  Plus,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Calendar,
-  X,
-  Trash2,
-  PieChart,
-  CreditCard,
-  Coins,
-  Edit3,
-  Cloud,
-  Copy,
-  CheckCircle2,
-  RefreshCw,
-  Database,
-  Download,
-  Upload
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Dòng Tiền</title>
+    
+    <!-- Tích hợp Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tích hợp FontAwesome cho các biểu tượng (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tích hợp React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Tích hợp Babel để dịch cú pháp JSX ngay trên trình duyệt -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-// --- CẤU HÌNH DANH MỤC ---
-const CATEGORIES = {
-  expense: [
-    { id: 'sinh-hoat', label: 'Sinh hoạt', icon: Utensils, color: 'bg-orange-100 text-orange-600' },
-    { id: 'hoc-hanh', label: 'Học hành', icon: GraduationCap, color: 'bg-blue-100 text-blue-600' },
-    { id: 'gia-dinh', label: 'Gia đình', icon: Home, color: 'bg-indigo-100 text-indigo-600' },
-    { id: 'xe-co', label: 'Xe cộ', icon: Car, color: 'bg-slate-100 text-slate-600' },
-    { id: 'hieu-hi', label: 'Hiếu hỉ', icon: Gift, color: 'bg-pink-100 text-pink-600' },
-    { id: 'dau-tu-chi', label: 'Đầu tư', icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
-    { id: 'khac-chi', label: 'Chi khác', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-600' },
-  ],
-  income: [
-    { id: 'luong', label: 'Tiền lương', icon: Wallet, color: 'bg-green-100 text-green-600' },
-    { id: 'kinh-doanh', label: 'Kinh doanh', icon: Briefcase, color: 'bg-blue-100 text-blue-600' },
-    { id: 'dau-tu-thu', label: 'Lợi nhuận ĐT', icon: TrendingUp, color: 'bg-purple-100 text-purple-600' },
-    { id: 'khac-thu', label: 'Thu khác', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-600' },
-  ]
-};
+    <!-- Các hiệu ứng CSS tùy chỉnh -->
+    <style>
+        @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { margin: 0; padding: 0; background-color: #f3f4f6; }
+    </style>
+</head>
+<body>
+    <!-- Nơi React sẽ render ứng dụng -->
+    <div id="root"></div>
 
-// --- ĐOẠN MÃ GOOGLE APPS SCRIPT ĐÃ ĐƯỢC CẬP NHẬT (THÊM HÀM DOGET) ---
-const GOOGLE_SCRIPT_CODE = `function doPost(e) {
+    <!-- MÃ NGUỒN ỨNG DỤNG -->
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- CẤU HÌNH DANH MỤC (Sử dụng FontAwesome) ---
+        const CATEGORIES = {
+            expense: [
+                { id: 'sinh-hoat', label: 'Sinh hoạt', icon: 'fas fa-utensils', color: 'bg-orange-100 text-orange-600' },
+                { id: 'hoc-hanh', label: 'Học hành', icon: 'fas fa-graduation-cap', color: 'bg-blue-100 text-blue-600' },
+                { id: 'gia-dinh', label: 'Gia đình', icon: 'fas fa-home', color: 'bg-indigo-100 text-indigo-600' },
+                { id: 'xe-co', label: 'Xe cộ', icon: 'fas fa-car', color: 'bg-slate-100 text-slate-600' },
+                { id: 'hieu-hi', label: 'Hiếu hỉ', icon: 'fas fa-gift', color: 'bg-pink-100 text-pink-600' },
+                { id: 'dau-tu-chi', label: 'Đầu tư', icon: 'fas fa-chart-line', color: 'bg-purple-100 text-purple-600' },
+                { id: 'khac-chi', label: 'Chi khác', icon: 'fas fa-ellipsis-h', color: 'bg-gray-100 text-gray-600' },
+            ],
+            income: [
+                { id: 'luong', label: 'Tiền lương', icon: 'fas fa-wallet', color: 'bg-green-100 text-green-600' },
+                { id: 'kinh-doanh', label: 'Kinh doanh', icon: 'fas fa-briefcase', color: 'bg-blue-100 text-blue-600' },
+                { id: 'dau-tu-thu', label: 'Lợi nhuận ĐT', icon: 'fas fa-chart-line', color: 'bg-purple-100 text-purple-600' },
+                { id: 'khac-thu', label: 'Thu khác', icon: 'fas fa-ellipsis-h', color: 'bg-gray-100 text-gray-600' },
+            ]
+        };
+
+        // --- ĐOẠN MÃ GOOGLE APPS SCRIPT ---
+        const GOOGLE_SCRIPT_CODE = `function doPost(e) {
   var data = JSON.parse(e.postData.contents);
   var doc = SpreadsheetApp.getActiveSpreadsheet();
 
-  // Lưu Giao dịch
   var sheetTx = doc.getSheetByName("Transactions") || doc.insertSheet("Transactions");
   sheetTx.clear();
   sheetTx.appendRow(['ID', 'Loại', 'Số tiền', 'Danh mục', 'Ngày', 'Ghi chú', 'Thời gian']);
   if(data.transactions) {
     data.transactions.forEach(function(tx) {
-      // Lưu thẳng timestamp dạng số để dễ đọc lại
       sheetTx.appendRow([tx.id, tx.type, tx.amount, tx.category, tx.date, tx.note, tx.timestamp]);
     });
   }
 
-  // Lưu Tài khoản
   var sheetAcc = doc.getSheetByName("Accounts") || doc.insertSheet("Accounts");
   sheetAcc.clear();
   sheetAcc.appendRow(['Tiền mặt', 'Ngân hàng', 'Cập nhật lần cuối']);
@@ -71,15 +77,13 @@ const GOOGLE_SCRIPT_CODE = `function doPost(e) {
      sheetAcc.appendRow([data.accounts.cash, data.accounts.bank, new Date().getTime()]);
   }
 
-  return ContentService.createTextOutput(JSON.stringify({"status": "success"}))
-        .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify({"status": "success"})).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doGet(e) {
   var doc = SpreadsheetApp.getActiveSpreadsheet();
   var result = { transactions: [], accounts: { cash: 0, bank: 0 } };
 
-  // Đọc Giao dịch
   var sheetTx = doc.getSheetByName("Transactions");
   if(sheetTx) {
     var dataTx = sheetTx.getDataRange().getValues();
@@ -97,7 +101,6 @@ function doGet(e) {
     }
   }
 
-  // Đọc Tài khoản
   var sheetAcc = doc.getSheetByName("Accounts");
   if(sheetAcc) {
     var dataAcc = sheetAcc.getDataRange().getValues();
@@ -107,642 +110,587 @@ function doGet(e) {
     }
   }
 
-  return ContentService.createTextOutput(JSON.stringify(result))
-        .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }`;
 
-// --- HÀM TIỆN ÍCH ---
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
-};
+        // --- HÀM TIỆN ÍCH ---
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+        };
 
-const getCategoryDetails = (type, id) => {
-  const list = CATEGORIES[type];
-  return list.find(c => c.id === id) || { label: 'Không rõ', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-500' };
-};
+        const getCategoryDetails = (type, id) => {
+            const list = CATEGORIES[type];
+            return list.find(c => c.id === id) || { label: 'Không rõ', icon: 'fas fa-ellipsis-h', color: 'bg-gray-100 text-gray-500' };
+        };
 
-const isThisWeek = (dateStr) => {
-  const now = new Date();
-  const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - dayOfWeek + 1);
-  startOfWeek.setHours(0,0,0,0);
-  
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23,59,59,999);
-  
-  const txDate = new Date(dateStr);
-  return txDate >= startOfWeek && txDate <= endOfWeek;
-};
+        const isThisWeek = (dateStr) => {
+            const now = new Date();
+            const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - dayOfWeek + 1);
+            startOfWeek.setHours(0,0,0,0);
+            
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23,59,59,999);
+            
+            const txDate = new Date(dateStr);
+            return txDate >= startOfWeek && txDate <= endOfWeek;
+        };
 
-export default function App() {
-  // --- STATE CƠ BẢN ---
-  const [transactions, setTransactions] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterPeriod, setFilterPeriod] = useState('month'); 
-  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
-  const [filterType, setFilterType] = useState('all'); 
-  
-  // Tài khoản
-  const [accounts, setAccounts] = useState({ cash: 0, bank: 0 });
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
-  const [tempAccounts, setTempAccounts] = useState({ cash: '', bank: '' });
+        // --- COMPONENT CHÍNH ---
+        function App() {
+            // State
+            const [transactions, setTransactions] = useState([]);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [filterPeriod, setFilterPeriod] = useState('month'); 
+            const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+            const [filterType, setFilterType] = useState('all'); 
+            
+            const [accounts, setAccounts] = useState({ cash: 0, bank: 0 });
+            const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+            const [tempAccounts, setTempAccounts] = useState({ cash: '', bank: '' });
 
-  // Form
-  const [formType, setFormType] = useState('expense');
-  const [formAmount, setFormAmount] = useState('');
-  const [formCategory, setFormCategory] = useState(CATEGORIES.expense[0].id);
-  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
-  const [formNote, setFormNote] = useState('');
+            const [formType, setFormType] = useState('expense');
+            const [formAmount, setFormAmount] = useState('');
+            const [formCategory, setFormCategory] = useState(CATEGORIES.expense[0].id);
+            const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
+            const [formNote, setFormNote] = useState('');
 
-  // --- GOOGLE SHEETS SYNC STATE ---
-  const [sheetUrl, setSheetUrl] = useState('');
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isFetchingData, setIsFetchingData] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
+            const [sheetUrl, setSheetUrl] = useState('');
+            const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+            const [isSyncing, setIsSyncing] = useState(false);
+            const [isFetchingData, setIsFetchingData] = useState(false);
+            const [copiedCode, setCopiedCode] = useState(false);
 
-  // --- QUẢN LÝ DỮ LIỆU CỤC BỘ ---
-  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
-  const [importDataText, setImportDataText] = useState('');
+            const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+            const [importDataText, setImportDataText] = useState('');
 
-  // Khởi tạo
-  useEffect(() => {
-    const savedTx = localStorage.getItem('cashflow_transactions');
-    const savedAcc = localStorage.getItem('cashflow_accounts');
-    const savedUrl = localStorage.getItem('cashflow_sheetUrl');
-    if (savedTx) setTransactions(JSON.parse(savedTx));
-    if (savedAcc) setAccounts(JSON.parse(savedAcc));
-    if (savedUrl) setSheetUrl(savedUrl);
-  }, []);
+            // Khởi tạo
+            useEffect(() => {
+                const savedTx = localStorage.getItem('cashflow_transactions');
+                const savedAcc = localStorage.getItem('cashflow_accounts');
+                const savedUrl = localStorage.getItem('cashflow_sheetUrl');
+                if (savedTx) setTransactions(JSON.parse(savedTx));
+                if (savedAcc) setAccounts(JSON.parse(savedAcc));
+                if (savedUrl) setSheetUrl(savedUrl);
+            }, []);
 
-  // Lưu
-  useEffect(() => { localStorage.setItem('cashflow_transactions', JSON.stringify(transactions)); }, [transactions]);
-  useEffect(() => { localStorage.setItem('cashflow_accounts', JSON.stringify(accounts)); }, [accounts]);
-  useEffect(() => { localStorage.setItem('cashflow_sheetUrl', sheetUrl); }, [sheetUrl]);
+            // Lưu LocalStorage
+            useEffect(() => { localStorage.setItem('cashflow_transactions', JSON.stringify(transactions)); }, [transactions]);
+            useEffect(() => { localStorage.setItem('cashflow_accounts', JSON.stringify(accounts)); }, [accounts]);
+            useEffect(() => { localStorage.setItem('cashflow_sheetUrl', sheetUrl); }, [sheetUrl]);
 
-  // --- LỌC & THỐNG KÊ ---
-  const periodTransactions = useMemo(() => {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const currMonthStr = todayStr.substring(0, 7); 
-    const currYearStr = todayStr.substring(0, 4);  
+            // Tính toán thống kê
+            const periodTransactions = useMemo(() => {
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                const currMonthStr = todayStr.substring(0, 7); 
+                const currYearStr = todayStr.substring(0, 4);  
 
-    return transactions.filter(tx => {
-      if (filterPeriod === 'all') return true;
-      if (filterPeriod === 'date') return tx.date === filterDate;
-      if (filterPeriod === 'day') return tx.date === todayStr; 
-      if (filterPeriod === 'month') return tx.date.startsWith(currMonthStr);
-      if (filterPeriod === 'year') return tx.date.startsWith(currYearStr);
-      if (filterPeriod === 'week') return isThisWeek(tx.date);
-      return true;
-    });
-  }, [transactions, filterPeriod, filterDate]);
+                return transactions.filter(tx => {
+                if (filterPeriod === 'all') return true;
+                if (filterPeriod === 'date') return tx.date === filterDate;
+                if (filterPeriod === 'day') return tx.date === todayStr; 
+                if (filterPeriod === 'month') return tx.date.startsWith(currMonthStr);
+                if (filterPeriod === 'year') return tx.date.startsWith(currYearStr);
+                if (filterPeriod === 'week') return isThisWeek(tx.date);
+                return true;
+                });
+            }, [transactions, filterPeriod, filterDate]);
 
-  const { totalIncome, totalExpense } = useMemo(() => {
-    return periodTransactions.reduce((acc, curr) => {
-      if (curr.type === 'income') acc.totalIncome += curr.amount;
-      else acc.totalExpense += curr.amount;
-      return acc;
-    }, { totalIncome: 0, totalExpense: 0 });
-  }, [periodTransactions]);
+            const { totalIncome, totalExpense } = useMemo(() => {
+                return periodTransactions.reduce((acc, curr) => {
+                if (curr.type === 'income') acc.totalIncome += curr.amount;
+                else acc.totalExpense += curr.amount;
+                return acc;
+                }, { totalIncome: 0, totalExpense: 0 });
+            }, [periodTransactions]);
 
-  const displayTransactions = useMemo(() => {
-    return periodTransactions.filter(tx => filterType === 'all' || tx.type === filterType);
-  }, [periodTransactions, filterType]);
+            const displayTransactions = useMemo(() => {
+                return periodTransactions.filter(tx => filterType === 'all' || tx.type === filterType);
+            }, [periodTransactions, filterType]);
 
-  const totalAccountBalance = accounts.cash + accounts.bank;
-  const totalFlow = totalIncome + totalExpense;
-  const expensePct = totalFlow === 0 ? 0 : Math.round((totalExpense / totalFlow) * 100);
-  const chartStyle = totalFlow === 0 ? { background: '#f3f4f6' } : { background: `conic-gradient(#ef4444 0% ${expensePct}%, #22c55e ${expensePct}% 100%)` };
+            const totalAccountBalance = accounts.cash + accounts.bank;
+            const totalFlow = totalIncome + totalExpense;
+            const expensePct = totalFlow === 0 ? 0 : Math.round((totalExpense / totalFlow) * 100);
+            const chartStyle = totalFlow === 0 ? { background: '#f3f4f6' } : { background: `conic-gradient(#ef4444 0% ${expensePct}%, #22c55e ${expensePct}% 100%)` };
 
-  const groupedTransactions = useMemo(() => {
-    const groups = displayTransactions.reduce((acc, curr) => {
-      if (!acc[curr.date]) acc[curr.date] = [];
-      acc[curr.date].push(curr);
-      return acc;
-    }, {});
-    
-    return Object.keys(groups).sort((a, b) => new Date(b) - new Date(a))
-      .map(date => ({ date, items: groups[date].sort((a, b) => b.timestamp - a.timestamp) }));
-  }, [displayTransactions]);
+            const groupedTransactions = useMemo(() => {
+                const groups = displayTransactions.reduce((acc, curr) => {
+                if (!acc[curr.date]) acc[curr.date] = [];
+                acc[curr.date].push(curr);
+                return acc;
+                }, {});
+                
+                return Object.keys(groups).sort((a, b) => new Date(b) - new Date(a))
+                .map(date => ({ date, items: groups[date].sort((a, b) => b.timestamp - a.timestamp) }));
+            }, [displayTransactions]);
 
-  // --- XỬ LÝ SỰ KIỆN CƠ BẢN ---
-  const handleAmountChange = (e, setter) => { setter(e.target.value.replace(/[^0-9]/g, '')); };
+            // --- XỬ LÝ SỰ KIỆN CƠ BẢN ---
+            const handleAmountChange = (e, setter) => { setter(e.target.value.replace(/[^0-9]/g, '')); };
 
-  const handleSaveTransaction = (e) => {
-    e.preventDefault();
-    if (!formAmount || parseInt(formAmount) <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
-    const newTx = { id: Date.now().toString(), type: formType, amount: parseInt(formAmount), category: formCategory, date: formDate, note: formNote, timestamp: Date.now() };
-    setTransactions([newTx, ...transactions]);
-    setIsModalOpen(false);
-    setFormAmount(''); setFormNote('');
-  };
+            const handleSaveTransaction = (e) => {
+                e.preventDefault();
+                if (!formAmount || parseInt(formAmount) <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
+                const newTx = { id: Date.now().toString(), type: formType, amount: parseInt(formAmount), category: formCategory, date: formDate, note: formNote, timestamp: Date.now() };
+                setTransactions([newTx, ...transactions]);
+                setIsModalOpen(false);
+                setFormAmount(''); setFormNote('');
+            };
 
-  const handleDelete = (id) => { if(window.confirm("Xóa giao dịch này?")) setTransactions(transactions.filter(tx => tx.id !== id)); };
+            const handleDelete = (id) => { if(window.confirm("Xóa giao dịch này?")) setTransactions(transactions.filter(tx => tx.id !== id)); };
 
-  const handleSaveAccounts = (e) => {
-    e.preventDefault();
-    setAccounts({ cash: parseInt(tempAccounts.cash) || 0, bank: parseInt(tempAccounts.bank) || 0 });
-    setIsAccountModalOpen(false);
-  };
+            const handleSaveAccounts = (e) => {
+                e.preventDefault();
+                setAccounts({ cash: parseInt(tempAccounts.cash) || 0, bank: parseInt(tempAccounts.bank) || 0 });
+                setIsAccountModalOpen(false);
+            };
 
-  const openAccountModal = () => {
-    setTempAccounts({ cash: accounts.cash.toString(), bank: accounts.bank.toString() });
-    setIsAccountModalOpen(true);
-  };
+            const openAccountModal = () => {
+                setTempAccounts({ cash: accounts.cash.toString(), bank: accounts.bank.toString() });
+                setIsAccountModalOpen(true);
+            };
 
-  // --- XỬ LÝ GOOGLE SHEETS SYNC (Đẩy & Kéo Dữ Liệu) ---
-  const handleCopyCode = () => {
-    const textArea = document.createElement("textarea");
-    textArea.value = GOOGLE_SCRIPT_CODE;
-    textArea.style.position = "fixed";
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.opacity = "0";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      if (document.execCommand('copy')) {
-        setCopiedCode(true);
-        setTimeout(() => setCopiedCode(false), 2000);
-      } else {
-        alert("Không thể tự động copy, vui lòng copy thủ công!");
-      }
-    } catch (err) {
-      alert("Không thể tự động copy, vui lòng bôi đen đoạn mã để copy thủ công!");
-    }
-    document.body.removeChild(textArea);
-  };
+            // --- XỬ LÝ GOOGLE SHEETS SYNC (Đẩy & Kéo Dữ Liệu) ---
+            const handleCopyCode = () => {
+                const textArea = document.createElement("textarea");
+                textArea.value = GOOGLE_SCRIPT_CODE;
+                textArea.style.position = "fixed";
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                if (document.execCommand('copy')) {
+                    setCopiedCode(true);
+                    setTimeout(() => setCopiedCode(false), 2000);
+                } else {
+                    alert("Không thể tự động copy, vui lòng copy thủ công!");
+                }
+                } catch (err) {
+                alert("Không thể tự động copy, vui lòng bôi đen đoạn mã để copy thủ công!");
+                }
+                document.body.removeChild(textArea);
+            };
 
-  // Đẩy dữ liệu lên
-  const syncDataToSheet = async () => {
-    if (!sheetUrl) return alert("Vui lòng dán URL Google Web App vào ô trống!");
-    
-    setIsSyncing(true);
-    try {
-      const response = await fetch(sheetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ transactions, accounts })
-      });
-      const result = await response.json();
-      if(result.status === 'success') {
-        alert("Đồng bộ dữ liệu lên Google Sheets thành công!");
-      } else {
-        alert("Có lỗi phản hồi từ Google Sheets!");
-      }
-    } catch (error) {
-      alert("Lỗi đồng bộ: " + error.message + "\nVui lòng kiểm tra lại đường dẫn Web App URL.");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+            const syncDataToSheet = async () => {
+                if (!sheetUrl) return alert("Vui lòng dán URL Google Web App vào ô trống!");
+                setIsSyncing(true);
+                try {
+                const response = await fetch(sheetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ transactions, accounts })
+                });
+                const result = await response.json();
+                if(result.status === 'success') {
+                    alert("Đồng bộ dữ liệu lên Google Sheets thành công!");
+                } else {
+                    alert("Có lỗi phản hồi từ Google Sheets!");
+                }
+                } catch (error) {
+                alert("Lỗi đồng bộ: " + error.message + "\nVui lòng kiểm tra lại đường dẫn Web App URL.");
+                } finally {
+                setIsSyncing(false);
+                }
+            };
 
-  // Kéo dữ liệu về
-  const fetchDataFromSheet = async () => {
-    if (!sheetUrl) return alert("Vui lòng dán URL Google Web App vào ô trống!");
-    if (!window.confirm("CẢNH BÁO: Dữ liệu hiện tại trên máy này sẽ bị GHI ĐÈ bằng dữ liệu từ Google Sheets. Bạn có chắc chắn?")) return;
+            const fetchDataFromSheet = async () => {
+                if (!sheetUrl) return alert("Vui lòng dán URL Google Web App vào ô trống!");
+                if (!window.confirm("CẢNH BÁO: Dữ liệu hiện tại trên máy này sẽ bị GHI ĐÈ bằng dữ liệu từ Google Sheets. Bạn có chắc chắn?")) return;
+                setIsFetchingData(true);
+                try {
+                const response = await fetch(sheetUrl);
+                const result = await response.json();
+                
+                if (result && result.transactions) {
+                    setTransactions(result.transactions);
+                    if (result.accounts) setAccounts(result.accounts);
+                    alert("Đã tải dữ liệu từ Google Sheets về thiết bị thành công!");
+                    setIsSyncModalOpen(false);
+                } else {
+                    alert("Dữ liệu trả về không hợp lệ, vui lòng kiểm tra lại Google Script!");
+                }
+                } catch (error) {
+                alert("Lỗi tải dữ liệu: " + error.message + "\nVui lòng chắc chắn bạn đã cập nhật mã Script mới nhất và đã chọn quyền truy cập cho 'Bất kỳ ai'.");
+                } finally {
+                setIsFetchingData(false);
+                }
+            };
 
-    setIsFetchingData(true);
-    try {
-      const response = await fetch(sheetUrl);
-      const result = await response.json();
-      
-      if (result && result.transactions) {
-        setTransactions(result.transactions);
-        if (result.accounts) setAccounts(result.accounts);
-        alert("Đã tải dữ liệu từ Google Sheets về thiết bị thành công!");
-        setIsSyncModalOpen(false);
-      } else {
-        alert("Dữ liệu trả về không hợp lệ, vui lòng kiểm tra lại Google Script!");
-      }
-    } catch (error) {
-      alert("Lỗi tải dữ liệu: " + error.message + "\nVui lòng chắc chắn bạn đã cập nhật mã Script mới nhất và đã chọn quyền truy cập cho 'Bất kỳ ai'.");
-    } finally {
-      setIsFetchingData(false);
-    }
-  };
+            // --- XỬ LÝ CHUYỂN DỮ LIỆU CỤC BỘ ---
+            const handleCopyExportData = () => {
+                const dataStr = JSON.stringify({ transactions, accounts });
+                const textArea = document.createElement("textarea");
+                textArea.value = dataStr;
+                textArea.style.position = "fixed";
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                if (document.execCommand('copy')) {
+                    alert('Đã copy dữ liệu! Hãy gửi đoạn chữ này sang máy mới và dán vào mục Phục hồi.');
+                } else {
+                    alert("Không thể tự động copy, vui lòng copy thủ công!");
+                }
+                } catch (err) {
+                alert('Lỗi copy!');
+                }
+                document.body.removeChild(textArea);
+            };
 
-  // --- XỬ LÝ CHUYỂN DỮ LIỆU CỤC BỘ (MÁY NÀY <-> MÁY KHÁC) ---
-  const handleCopyExportData = () => {
-    const dataStr = JSON.stringify({ transactions, accounts });
-    const textArea = document.createElement("textarea");
-    textArea.value = dataStr;
-    textArea.style.position = "fixed";
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.opacity = "0";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      if (document.execCommand('copy')) {
-        alert('Đã copy dữ liệu! Hãy gửi đoạn chữ này sang máy mới và dán vào mục Phục hồi.');
-      } else {
-        alert("Không thể tự động copy, vui lòng copy thủ công!");
-      }
-    } catch (err) {
-      alert('Lỗi copy!');
-    }
-    document.body.removeChild(textArea);
-  };
+            const handleImportData = () => {
+                if (!importDataText.trim()) return alert("Vui lòng dán dữ liệu vào ô trống!");
+                if (!window.confirm("CẢNH BÁO: Dữ liệu hiện tại sẽ bị ghi đè hoàn toàn bằng dữ liệu bạn vừa dán. Bạn có chắc chắn muốn phục hồi?")) return;
+                try {
+                const parsed = JSON.parse(importDataText);
+                if (parsed.transactions !== undefined && parsed.accounts !== undefined) {
+                    setTransactions(parsed.transactions);
+                    setAccounts(parsed.accounts);
+                    alert("Phục hồi dữ liệu thành công!");
+                    setIsDataModalOpen(false);
+                    setImportDataText("");
+                } else {
+                    alert("Dữ liệu không đúng định dạng của ứng dụng!");
+                }
+                } catch (e) {
+                alert("Dữ liệu không hợp lệ. Vui lòng kiểm tra lại đoạn mã bạn đã dán.");
+                }
+            };
 
-  const handleImportData = () => {
-    if (!importDataText.trim()) return alert("Vui lòng dán dữ liệu vào ô trống!");
-    if (!window.confirm("CẢNH BÁO: Dữ liệu hiện tại trên máy này sẽ bị ghi đè hoàn toàn bằng dữ liệu bạn vừa dán. Bạn có chắc chắn muốn phục hồi?")) return;
+            return (
+                <div className="min-h-screen bg-gray-100 flex justify-center font-sans text-gray-800">
+                <div className="w-full max-w-md bg-gray-50 shadow-xl relative pb-24 min-h-screen overflow-hidden">
+                    
+                    {/* HEADER & TÀI KHOẢN */}
+                    <div className="bg-indigo-600 text-white p-5 rounded-b-[2rem] shadow-md z-10 relative">
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-lg font-bold tracking-wide flex items-center">
+                        <i className="fas fa-wallet mr-2 text-xl"></i> Dòng Tiền
+                        </h1>
+                        <div className="flex space-x-2">
+                        <button onClick={() => setIsDataModalOpen(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition" title="Chuyển dữ liệu thủ công">
+                            <i className="fas fa-database text-lg"></i>
+                        </button>
+                        <button onClick={() => setIsSyncModalOpen(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition" title="Đồng bộ Google Sheets">
+                            <i className="fas fa-cloud text-lg"></i>
+                        </button>
+                        <button onClick={openAccountModal} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition" title="Chỉnh sửa số dư">
+                            <i className="fas fa-pen text-lg"></i>
+                        </button>
+                        </div>
+                    </div>
+                    
+                    <div className="text-center mb-5">
+                        <p className="text-sm text-indigo-200 mb-1">Tổng Tài Sản Hiện Tại</p>
+                        <h2 className="text-3xl font-bold tracking-tight">{formatCurrency(totalAccountBalance)}</h2>
+                    </div>
 
-    try {
-      const parsed = JSON.parse(importDataText);
-      if (parsed.transactions !== undefined && parsed.accounts !== undefined) {
-        setTransactions(parsed.transactions);
-        setAccounts(parsed.accounts);
-        alert("Phục hồi dữ liệu thành công!");
-        setIsDataModalOpen(false);
-        setImportDataText("");
-      } else {
-        alert("Dữ liệu không đúng định dạng của ứng dụng!");
-      }
-    } catch (e) {
-      alert("Dữ liệu không hợp lệ. Vui lòng kiểm tra lại đoạn mã bạn đã dán.");
-    }
-  };
+                    <div className="flex justify-between bg-black/10 rounded-2xl p-4 border border-white/10">
+                        <div className="flex-1 flex items-center border-r border-white/10">
+                        <div className="bg-white/20 p-2 rounded-lg mr-3"><i className="fas fa-coins text-yellow-300 text-xl"></i></div>
+                        <div>
+                            <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Tiền mặt</p>
+                            <p className="font-semibold text-sm">{formatCurrency(accounts.cash)}</p>
+                        </div>
+                        </div>
+                        <div className="flex-1 flex items-center pl-4">
+                        <div className="bg-white/20 p-2 rounded-lg mr-3"><i className="fas fa-credit-card text-blue-300 text-xl"></i></div>
+                        <div>
+                            <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Ngân hàng</p>
+                            <p className="font-semibold text-sm">{formatCurrency(accounts.bank)}</p>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex justify-center font-sans text-gray-800">
-      <div className="w-full max-w-md bg-gray-50 shadow-xl relative pb-24 min-h-screen overflow-hidden">
-        
-        {/* HEADER & TÀI KHOẢN THỰC TẾ */}
-        <div className="bg-indigo-600 text-white p-5 rounded-b-[2rem] shadow-md z-10 relative">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-lg font-bold tracking-wide flex items-center">
-              <Wallet size={20} className="mr-2" /> Dòng Tiền
-            </h1>
-            <div className="flex space-x-2">
-              <button onClick={() => setIsDataModalOpen(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition" title="Chuyển dữ liệu thủ công">
-                <Database size={18} />
-              </button>
-              <button 
-                onClick={() => setIsSyncModalOpen(true)} 
-                className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition"
-                title="Đồng bộ Google Sheets"
-              >
-                <Cloud size={18} />
-              </button>
-              <button onClick={openAccountModal} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition" title="Chỉnh sửa số dư">
-                <Edit3 size={18} />
-              </button>
-            </div>
-          </div>
-          
-          <div className="text-center mb-5">
-            <p className="text-sm text-indigo-200 mb-1">Tổng Tài Sản Hiện Tại</p>
-            <h2 className="text-3xl font-bold tracking-tight">{formatCurrency(totalAccountBalance)}</h2>
-          </div>
+                    {/* BÁO CÁO & BỘ LỌC */}
+                    <div className="px-4 pt-6 -mt-4">
+                    <h3 className="font-bold text-gray-800 mb-3 px-1">Báo cáo thu chi</h3>
+                    
+                    <div className="flex bg-white rounded-xl p-1 mb-2 shadow-sm border border-gray-100 overflow-x-auto hide-scrollbar">
+                        {[ { id: 'date', label: 'Ngày' }, { id: 'week', label: 'Tuần' }, { id: 'month', label: 'Tháng' }, { id: 'year', label: 'Năm' }, { id: 'all', label: 'Tất cả' } ].map(tab => (
+                        <button
+                            key={tab.id} onClick={() => setFilterPeriod(tab.id)}
+                            className={`flex-1 min-w-[60px] py-1.5 px-2 text-xs font-medium rounded-lg transition-all
+                            ${filterPeriod === tab.id ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+                        >
+                            {tab.label}
+                        </button>
+                        ))}
+                    </div>
 
-          <div className="flex justify-between bg-black/10 rounded-2xl p-4 border border-white/10">
-            <div className="flex-1 flex items-center border-r border-white/10">
-              <div className="bg-white/20 p-2 rounded-lg mr-3"><Coins size={20} className="text-yellow-300"/></div>
-              <div>
-                <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Tiền mặt</p>
-                <p className="font-semibold text-sm">{formatCurrency(accounts.cash)}</p>
-              </div>
-            </div>
-            <div className="flex-1 flex items-center pl-4">
-              <div className="bg-white/20 p-2 rounded-lg mr-3"><CreditCard size={20} className="text-blue-300"/></div>
-              <div>
-                <p className="text-[10px] text-indigo-200 uppercase tracking-wider">Ngân hàng</p>
-                <p className="font-semibold text-sm">{formatCurrency(accounts.bank)}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+                    {filterPeriod === 'date' && (
+                        <div className="mb-4 flex items-center bg-white rounded-xl p-2 shadow-sm border border-gray-100 animate-fade-in">
+                        <i className="fas fa-calendar-alt text-indigo-400 mr-2 ml-1 text-lg"></i>
+                        <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-full bg-transparent outline-none text-sm font-medium text-gray-700"/>
+                        </div>
+                    )}
 
-        {/* BÁO CÁO & BỘ LỌC */}
-        <div className="px-4 pt-6 -mt-4">
-          <h3 className="font-bold text-gray-800 mb-3 px-1">Báo cáo thu chi</h3>
-          
-          <div className="flex bg-white rounded-xl p-1 mb-2 shadow-sm border border-gray-100 overflow-x-auto hide-scrollbar">
-            {[ { id: 'date', label: 'Ngày' }, { id: 'week', label: 'Tuần' }, { id: 'month', label: 'Tháng' }, { id: 'year', label: 'Năm' }, { id: 'all', label: 'Tất cả' } ].map(tab => (
-              <button
-                key={tab.id} onClick={() => setFilterPeriod(tab.id)}
-                className={`flex-1 min-w-[60px] py-1.5 px-2 text-xs font-medium rounded-lg transition-all
-                  ${filterPeriod === tab.id ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-6">
+                        <div className="flex-1 space-y-2 pr-4">
+                        <div onClick={() => setFilterType(prev => prev === 'income' ? 'all' : 'income')} className={`cursor-pointer rounded-xl p-2 transition-all border-2 ${filterType === 'income' ? 'border-green-400 bg-green-50 shadow-sm' : 'border-transparent hover:bg-gray-50'}`}>
+                            <div className="flex items-center text-green-500 text-xs font-semibold uppercase mb-1"><i className="fas fa-arrow-circle-down mr-1 text-sm"></i> Tổng Thu</div>
+                            <p className="font-bold text-gray-800">{formatCurrency(totalIncome)}</p>
+                        </div>
+                        <div onClick={() => setFilterType(prev => prev === 'expense' ? 'all' : 'expense')} className={`cursor-pointer rounded-xl p-2 transition-all border-2 ${filterType === 'expense' ? 'border-red-400 bg-red-50 shadow-sm' : 'border-transparent hover:bg-gray-50'}`}>
+                            <div className="flex items-center text-red-500 text-xs font-semibold uppercase mb-1"><i className="fas fa-arrow-circle-up mr-1 text-sm"></i> Tổng Chi</div>
+                            <p className="font-bold text-gray-800">{formatCurrency(totalExpense)}</p>
+                        </div>
+                        </div>
+                        <div className="flex-shrink-0 flex flex-col items-center justify-center w-28 h-28">
+                        <div className="relative w-24 h-24 rounded-full shadow-inner flex items-center justify-center transition-all duration-500" style={chartStyle}>
+                            <div className="absolute inset-2.5 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
+                            {totalFlow > 0 ? (
+                                <><span className="text-xs font-bold text-red-500 leading-tight">{expensePct}%</span><span className="text-[9px] text-gray-400 uppercase">Chi</span></>
+                            ) : (<i className="fas fa-chart-pie text-gray-300 text-2xl"></i>)}
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
 
-          {filterPeriod === 'date' && (
-            <div className="mb-4 flex items-center bg-white rounded-xl p-2 shadow-sm border border-gray-100 animate-fade-in">
-              <Calendar size={18} className="text-indigo-400 mr-2 ml-1" />
-              <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-full bg-transparent outline-none text-sm font-medium text-gray-700"/>
-            </div>
-          )}
+                    {/* DANH SÁCH GIAO DỊCH */}
+                    <div className="px-4">
+                    <div className="flex justify-between items-center mb-4 px-1">
+                        <h3 className="font-bold text-gray-800">Giao dịch {filterType === 'income' ? 'thu' : filterType === 'expense' ? 'chi' : ''} {filterPeriod !== 'all' ? 'đã lọc' : ''}</h3>
+                        {filterType !== 'all' && (
+                        <button onClick={() => setFilterType('all')} className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">Hủy lọc Thu/Chi</button>
+                        )}
+                    </div>
+                    
+                    {groupedTransactions.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200"><p className="text-sm">Không có giao dịch nào.</p></div>
+                    ) : (
+                        <div className="space-y-4">
+                        {groupedTransactions.map((group) => {
+                            const isToday = group.date === new Date().toISOString().split('T')[0];
+                            const dateString = isToday ? 'Hôm nay' : new Date(group.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between mb-6">
-            <div className="flex-1 space-y-2 pr-4">
-              <div onClick={() => setFilterType(prev => prev === 'income' ? 'all' : 'income')} className={`cursor-pointer rounded-xl p-2 transition-all border-2 ${filterType === 'income' ? 'border-green-400 bg-green-50 shadow-sm' : 'border-transparent hover:bg-gray-50'}`}>
-                <div className="flex items-center text-green-500 text-xs font-semibold uppercase mb-1"><ArrowDownCircle size={14} className="mr-1" /> Tổng Thu</div>
-                <p className="font-bold text-gray-800">{formatCurrency(totalIncome)}</p>
-              </div>
-              <div onClick={() => setFilterType(prev => prev === 'expense' ? 'all' : 'expense')} className={`cursor-pointer rounded-xl p-2 transition-all border-2 ${filterType === 'expense' ? 'border-red-400 bg-red-50 shadow-sm' : 'border-transparent hover:bg-gray-50'}`}>
-                <div className="flex items-center text-red-500 text-xs font-semibold uppercase mb-1"><ArrowUpCircle size={14} className="mr-1" /> Tổng Chi</div>
-                <p className="font-bold text-gray-800">{formatCurrency(totalExpense)}</p>
-              </div>
-            </div>
-            <div className="flex-shrink-0 flex flex-col items-center justify-center w-28 h-28">
-              <div className="relative w-24 h-24 rounded-full shadow-inner flex items-center justify-center transition-all duration-500" style={chartStyle}>
-                <div className="absolute inset-2.5 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
-                  {totalFlow > 0 ? (
-                    <><span className="text-xs font-bold text-red-500 leading-tight">{expensePct}%</span><span className="text-[9px] text-gray-400 uppercase">Chi</span></>
-                  ) : (<PieChart size={20} className="text-gray-300" />)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                            return (
+                            <div key={group.date}>
+                                <h4 className="text-xs font-bold text-indigo-400 mb-2 px-1">{dateString}</h4>
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                {group.items.map((tx, index) => {
+                                    const { icon, label, color } = getCategoryDetails(tx.type, tx.category);
+                                    const isExpense = tx.type === 'expense';
+                                    
+                                    return (
+                                    <div key={tx.id} className={`flex items-center p-3 sm:p-4 hover:bg-gray-50 group ${index !== group.items.length - 1 ? 'border-b border-gray-50' : ''}`}>
+                                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 ${color}`}><i className={`${icon} text-lg`}></i></div>
+                                        <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{label}</p>
+                                        {tx.note && <p className="text-xs text-gray-500 truncate mt-0.5">{tx.note}</p>}
+                                        </div>
+                                        <div className="text-right flex items-center">
+                                        <span className={`font-semibold text-sm sm:text-base ${isExpense ? 'text-red-500' : 'text-green-500'}`}>
+                                            {isExpense ? '-' : '+'}{formatCurrency(tx.amount)}
+                                        </span>
+                                        <button onClick={() => handleDelete(tx.id)} className="ml-2 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><i className="fas fa-trash-alt text-base"></i></button>
+                                        </div>
+                                    </div>
+                                    );
+                                })}
+                                </div>
+                            </div>
+                            );
+                        })}
+                        </div>
+                    )}
+                    </div>
 
-        {/* DANH SÁCH GIAO DỊCH */}
-        <div className="px-4">
-          <div className="flex justify-between items-center mb-4 px-1">
-            <h3 className="font-bold text-gray-800">Giao dịch {filterType === 'income' ? 'thu' : filterType === 'expense' ? 'chi' : ''} {filterPeriod !== 'all' ? 'đã lọc' : ''}</h3>
-            {filterType !== 'all' && (
-              <button onClick={() => setFilterType('all')} className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">Hủy lọc Thu/Chi</button>
-            )}
-          </div>
-          
-          {groupedTransactions.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200"><p className="text-sm">Không có giao dịch nào.</p></div>
-          ) : (
-            <div className="space-y-4">
-              {groupedTransactions.map((group) => {
-                const isToday = group.date === new Date().toISOString().split('T')[0];
-                const dateString = isToday ? 'Hôm nay' : new Date(group.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    {/* NÚT THÊM NHANH */}
+                    <div className="fixed bottom-6 left-0 w-full flex justify-center pointer-events-none z-20">
+                    <div className="w-full max-w-md relative">
+                        <button 
+                        onClick={() => { setFormType('expense'); setFormCategory(CATEGORIES.expense[0].id); setFormDate(new Date().toISOString().split('T')[0]); setIsModalOpen(true); }}
+                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/40 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all pointer-events-auto"
+                        >
+                        <i className="fas fa-plus text-2xl"></i>
+                        </button>
+                    </div>
+                    </div>
 
-                return (
-                  <div key={group.date}>
-                    <h4 className="text-xs font-bold text-indigo-400 mb-2 px-1">{dateString}</h4>
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                      {group.items.map((tx, index) => {
-                        const { icon: Icon, label, color } = getCategoryDetails(tx.type, tx.category);
-                        const isExpense = tx.type === 'expense';
+                    {/* MODAL ĐỒNG BỘ GOOGLE SHEETS */}
+                    {isSyncModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
+                            <h3 className="font-bold text-gray-800 flex items-center">
+                            <i className="fas fa-cloud mr-2 text-indigo-500 text-xl"></i> Đồng bộ qua Sheets
+                            </h3>
+                            <button onClick={() => setIsSyncModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                        </div>
                         
-                        return (
-                          <div key={tx.id} className={`flex items-center p-3 sm:p-4 hover:bg-gray-50 group ${index !== group.items.length - 1 ? 'border-b border-gray-50' : ''}`}>
-                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 ${color}`}><Icon size={18} /></div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{label}</p>
-                              {tx.note && <p className="text-xs text-gray-500 truncate mt-0.5">{tx.note}</p>}
+                        <div className="p-5 overflow-y-auto">
+                            <div className="mb-6">
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">URL Google Web App:</label>
+                            <input type="text" placeholder="https://script.google.com/..." value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full text-sm border border-indigo-200 bg-indigo-50 rounded-xl px-3 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"/>
+                            <p className="text-[10px] text-gray-500 mt-2">Lưu lại đường link này, khi sang điện thoại/trình duyệt khác bạn chỉ cần nhập link này là có thể tải về máy toàn bộ dữ liệu.</p>
                             </div>
-                            <div className="text-right flex items-center">
-                              <span className={`font-semibold text-sm sm:text-base ${isExpense ? 'text-red-500' : 'text-green-500'}`}>
-                                {isExpense ? '-' : '+'}{formatCurrency(tx.amount)}
-                              </span>
-                              <button onClick={() => handleDelete(tx.id)} className="ml-2 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+
+                            <div className="border-t border-gray-100 pt-4">
+                            <p className="text-sm font-bold text-gray-700 mb-2">Lần đầu thiết lập?</p>
+                            <p className="text-xs text-gray-600 mb-3">Tạo Google Sheets mới > Tiện ích mở rộng > Apps Script và dán mã này vào (nhớ cấp quyền truy cập cho Bất kỳ ai):</p>
+                            <div className="relative mb-2">
+                                <textarea readOnly value={GOOGLE_SCRIPT_CODE} className="w-full h-16 text-[10px] font-mono bg-gray-800 text-green-400 p-3 rounded-xl outline-none resize-none" />
+                                <button onClick={handleCopyCode} className="absolute top-2 right-2 p-1 bg-white/20 text-white rounded-md hover:bg-white/30 transition">
+                                {copiedCode ? <i className="fas fa-check-circle text-green-400 text-sm"></i> : <i className="fas fa-copy text-sm"></i>}
+                                </button>
                             </div>
-                          </div>
-                        );
-                      })}
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-t border-gray-100 bg-gray-50 flex space-x-3">
+                            <button onClick={fetchDataFromSheet} disabled={isFetchingData || isSyncing} className="flex-1 py-3 rounded-xl font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-all flex flex-col items-center justify-center text-sm">
+                            {isFetchingData ? <i className="fas fa-sync-alt animate-spin mb-1 text-lg"></i> : <i className="fas fa-file-download mb-1 text-lg"></i>} Tải về máy
+                            </button>
+                            <button onClick={syncDataToSheet} disabled={isSyncing || isFetchingData} className="flex-1 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition-all flex flex-col items-center justify-center text-sm">
+                            {isSyncing ? <i className="fas fa-sync-alt animate-spin mb-1 text-lg"></i> : <i className="fas fa-file-upload mb-1 text-lg"></i>} Lưu lên Sheets
+                            </button>
+                        </div>
+                        </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                    )}
 
-        {/* NÚT THÊM NHANH */}
-        <div className="fixed bottom-6 left-0 w-full flex justify-center pointer-events-none z-20">
-          <div className="w-full max-w-md relative">
-            <button 
-              onClick={() => { setFormType('expense'); setFormCategory(CATEGORIES.expense[0].id); setFormDate(new Date().toISOString().split('T')[0]); setIsModalOpen(true); }}
-              className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/40 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all pointer-events-auto"
-            >
-              <Plus size={28} />
-            </button>
-          </div>
-        </div>
-
-        {/* MODAL ĐỒNG BỘ GOOGLE SHEETS */}
-        {isSyncModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
-              <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
-                <h3 className="font-bold text-gray-800 flex items-center">
-                  <Cloud size={20} className="mr-2 text-indigo-500" /> Đồng bộ qua Sheets
-                </h3>
-                <button onClick={() => setIsSyncModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={20}/></button>
-              </div>
-              
-              <div className="p-5 overflow-y-auto">
-                {/* Khu vực chứa link */}
-                <div className="mb-6">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">URL Google Web App (Môi giới):</label>
-                  <input
-                    type="text"
-                    placeholder="Dán link (https://script.google.com/...) vào đây"
-                    value={sheetUrl}
-                    onChange={(e) => setSheetUrl(e.target.value)}
-                    className="w-full text-sm border border-indigo-200 bg-indigo-50 rounded-xl px-3 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-                  />
-                  <p className="text-[10px] text-gray-500 mt-2">
-                    Lưu lại đường link này, khi sang điện thoại/trình duyệt khác bạn chỉ cần nhập link này là có thể tải về máy toàn bộ dữ liệu.
-                  </p>
-                </div>
-
-                {/* Khu vực Hướng dẫn tạo mới nếu chưa có */}
-                <div className="border-t border-gray-100 pt-4">
-                  <p className="text-sm font-bold text-gray-700 mb-2">Lần đầu thiết lập?</p>
-                  <p className="text-xs text-gray-600 mb-3">Tạo Google Sheets mới {'>'} Tiện ích mở rộng {'>'} Apps Script và dán mã này vào (nhớ cấp quyền cho Bất kỳ ai):</p>
-                  
-                  <div className="relative mb-2">
-                    <textarea readOnly value={GOOGLE_SCRIPT_CODE} className="w-full h-16 text-[10px] font-mono bg-gray-800 text-green-400 p-3 rounded-xl outline-none resize-none" />
-                    <button onClick={handleCopyCode} className="absolute top-2 right-2 p-1 bg-white/20 text-white rounded-md hover:bg-white/30 transition">
-                      {copiedCode ? <CheckCircle2 size={14} className="text-green-400" /> : <Copy size={14} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Khu vực nút bấm Upload / Download */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50 flex space-x-3">
-                <button 
-                  onClick={fetchDataFromSheet}
-                  disabled={isFetchingData || isSyncing}
-                  className="flex-1 py-3 rounded-xl font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-all flex flex-col items-center justify-center text-sm"
-                >
-                  {isFetchingData ? <RefreshCw size={16} className="animate-spin mb-1" /> : <Download size={16} className="mb-1" />}
-                  Tải về máy
-                </button>
-                <button 
-                  onClick={syncDataToSheet}
-                  disabled={isSyncing || isFetchingData}
-                  className="flex-1 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition-all flex flex-col items-center justify-center text-sm"
-                >
-                  {isSyncing ? <RefreshCw size={16} className="animate-spin mb-1" /> : <Upload size={16} className="mb-1" />}
-                  Lưu lên Sheets
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL CẬP NHẬT TÀI KHOẢN */}
-        {isAccountModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
-              <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
-                <h3 className="font-bold text-gray-800">Kiểm kê tài sản</h3>
-                <button onClick={() => setIsAccountModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={20}/></button>
-              </div>
-              <form onSubmit={handleSaveAccounts} className="p-5 space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Tiền mặt hiện tại</label>
-                  <div className="relative">
-                    <input type="text" inputMode="numeric" value={tempAccounts.cash ? new Intl.NumberFormat('vi-VN').format(tempAccounts.cash) : ''} onChange={(e) => handleAmountChange(e, (val) => setTempAccounts({...tempAccounts, cash: val}))} className="w-full text-xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">đ</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Tiền trong Ngân hàng</label>
-                  <div className="relative">
-                    <input type="text" inputMode="numeric" value={tempAccounts.bank ? new Intl.NumberFormat('vi-VN').format(tempAccounts.bank) : ''} onChange={(e) => handleAmountChange(e, (val) => setTempAccounts({...tempAccounts, bank: val}))} className="w-full text-xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">đ</span>
-                  </div>
-                </div>
-                <button type="submit" className="w-full py-3 mt-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">Lưu thay đổi</button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL THÊM GIAO DỊCH */}
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up sm:animate-fade-in">
-              <div className="flex justify-between items-center p-5 border-b border-gray-100">
-                <h3 className="font-bold text-lg">Thêm Giao Dịch</h3>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"><X size={20} className="text-gray-600" /></button>
-              </div>
-
-              <div className="p-5 overflow-y-auto max-h-[80vh]">
-                <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-                  <button className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${formType === 'expense' ? 'bg-white shadow text-red-600' : 'text-gray-500'}`} onClick={() => { setFormType('expense'); setFormCategory(CATEGORIES.expense[0].id); }}>Khoản Chi</button>
-                  <button className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${formType === 'income' ? 'bg-white shadow text-green-600' : 'text-gray-500'}`} onClick={() => { setFormType('income'); setFormCategory(CATEGORIES.income[0].id); }}>Khoản Thu</button>
-                </div>
-
-                <form onSubmit={handleSaveTransaction}>
-                  <div className="mb-6">
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Số Tiền (VNĐ)</label>
-                    <div className="relative">
-                      <input type="text" inputMode="numeric" placeholder="0" autoFocus value={formAmount ? new Intl.NumberFormat('vi-VN').format(formAmount) : ''} onChange={(e) => handleAmountChange(e, setFormAmount)} className={`w-full text-3xl font-bold border-b-2 bg-transparent pb-2 outline-none transition-colors ${formType === 'expense' ? 'text-red-600 border-red-200 focus:border-red-500' : 'text-green-600 border-green-200 focus:border-green-500'}`} />
-                      <span className="absolute right-0 bottom-3 text-gray-400 font-medium">đ</span>
+                    {/* MODAL CẬP NHẬT TÀI KHOẢN */}
+                    {isAccountModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
+                            <h3 className="font-bold text-gray-800">Kiểm kê tài sản</h3>
+                            <button onClick={() => setIsAccountModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                        </div>
+                        <form onSubmit={handleSaveAccounts} className="p-5 space-y-4">
+                            <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Tiền mặt hiện tại</label>
+                            <div className="relative">
+                                <input type="text" inputMode="numeric" value={tempAccounts.cash ? new Intl.NumberFormat('vi-VN').format(tempAccounts.cash) : ''} onChange={(e) => handleAmountChange(e, (val) => setTempAccounts({...tempAccounts, cash: val}))} className="w-full text-xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">đ</span>
+                            </div>
+                            </div>
+                            <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Tiền trong Ngân hàng</label>
+                            <div className="relative">
+                                <input type="text" inputMode="numeric" value={tempAccounts.bank ? new Intl.NumberFormat('vi-VN').format(tempAccounts.bank) : ''} onChange={(e) => handleAmountChange(e, (val) => setTempAccounts({...tempAccounts, bank: val}))} className="w-full text-xl font-bold border border-gray-200 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">đ</span>
+                            </div>
+                            </div>
+                            <button type="submit" className="w-full py-3 mt-2 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">Lưu thay đổi</button>
+                        </form>
+                        </div>
                     </div>
-                  </div>
+                    )}
 
-                  <div className="mb-6">
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Danh Mục</label>
-                    <div className="grid grid-cols-4 gap-3">
-                      {CATEGORIES[formType].map((cat) => {
-                        const isSelected = formCategory === cat.id; const Icon = cat.icon;
-                        return (
-                          <div key={cat.id} onClick={() => setFormCategory(cat.id)} className="flex flex-col items-center cursor-pointer">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 mb-1 ${isSelected ? cat.color + ' ring-2 ring-offset-2 ring-indigo-500 shadow-md scale-105' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}><Icon size={24} /></div>
-                            <span className={`text-[11px] text-center leading-tight mt-1 ${isSelected ? 'font-bold text-gray-800' : 'text-gray-500'}`}>{cat.label}</span>
-                          </div>
-                        );
-                      })}
+                    {/* MODAL THÊM GIAO DỊCH */}
+                    {isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up sm:animate-fade-in">
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100">
+                            <h3 className="font-bold text-lg">Thêm Giao Dịch</h3>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"><i className="fas fa-times text-xl text-gray-600"></i></button>
+                        </div>
+
+                        <div className="p-5 overflow-y-auto max-h-[80vh]">
+                            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                            <button className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${formType === 'expense' ? 'bg-white shadow text-red-600' : 'text-gray-500'}`} onClick={() => { setFormType('expense'); setFormCategory(CATEGORIES.expense[0].id); }}>Khoản Chi</button>
+                            <button className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${formType === 'income' ? 'bg-white shadow text-green-600' : 'text-gray-500'}`} onClick={() => { setFormType('income'); setFormCategory(CATEGORIES.income[0].id); }}>Khoản Thu</button>
+                            </div>
+
+                            <form onSubmit={handleSaveTransaction}>
+                            <div className="mb-6">
+                                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Số Tiền (VNĐ)</label>
+                                <div className="relative">
+                                <input type="text" inputMode="numeric" placeholder="0" autoFocus value={formAmount ? new Intl.NumberFormat('vi-VN').format(formAmount) : ''} onChange={(e) => handleAmountChange(e, setFormAmount)} className={`w-full text-3xl font-bold border-b-2 bg-transparent pb-2 outline-none transition-colors ${formType === 'expense' ? 'text-red-600 border-red-200 focus:border-red-500' : 'text-green-600 border-green-200 focus:border-green-500'}`} />
+                                <span className="absolute right-0 bottom-3 text-gray-400 font-medium">đ</span>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Danh Mục</label>
+                                <div className="grid grid-cols-4 gap-3">
+                                {CATEGORIES[formType].map((cat) => {
+                                    const isSelected = formCategory === cat.id; 
+                                    return (
+                                    <div key={cat.id} onClick={() => setFormCategory(cat.id)} className="flex flex-col items-center cursor-pointer">
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 mb-1 ${isSelected ? cat.color + ' ring-2 ring-offset-2 ring-indigo-500 shadow-md scale-105' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}><i className={`${cat.icon} text-2xl`}></i></div>
+                                        <span className={`text-[11px] text-center leading-tight mt-1 ${isSelected ? 'font-bold text-gray-800' : 'text-gray-500'}`}>{cat.label}</span>
+                                    </div>
+                                    );
+                                })}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 mb-8">
+                                <div className="flex items-center border border-gray-200 rounded-xl p-3 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                                <i className="fas fa-calendar-alt text-gray-400 mr-3 text-xl"></i><input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} required className="w-full bg-transparent outline-none text-gray-700" />
+                                </div>
+                                <div className="flex items-center border border-gray-200 rounded-xl p-3 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
+                                <i className="fas fa-ellipsis-h text-gray-400 mr-3 text-xl"></i><input type="text" placeholder="Ghi chú thêm (Tùy chọn)..." value={formNote} onChange={(e) => setFormNote(e.target.value)} className="w-full bg-transparent outline-none text-gray-700" />
+                                </div>
+                            </div>
+
+                            <button type="submit" className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-transform active:scale-[0.98] ${formType === 'expense' ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30' : 'bg-green-500 hover:bg-green-600 shadow-green-500/30'}`}>
+                                Lưu {formType === 'expense' ? 'Khoản Chi' : 'Khoản Thu'}
+                            </button>
+                            </form>
+                        </div>
+                        </div>
                     </div>
-                  </div>
+                    )}
 
-                  <div className="space-y-4 mb-8">
-                    <div className="flex items-center border border-gray-200 rounded-xl p-3 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
-                      <Calendar className="text-gray-400 mr-3" size={20} /><input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} required className="w-full bg-transparent outline-none text-gray-700" />
+                    {/* MODAL QUẢN LÝ DỮ LIỆU CỤC BỘ (SAO LƯU / PHỤC HỒI TEXT) */}
+                    {isDataModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
+                            <h3 className="font-bold text-gray-800 flex items-center">
+                            <i className="fas fa-database mr-2 text-indigo-500 text-xl"></i> Chuyển thiết bị thủ công
+                            </h3>
+                            <button onClick={() => setIsDataModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                        </div>
+                        
+                        <div className="p-5 overflow-y-auto space-y-6">
+                            <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                            <div className="flex items-center mb-2">
+                                <i className="fas fa-file-upload text-indigo-600 mr-2 text-lg"></i>
+                                <h4 className="font-bold text-sm text-indigo-900">1. Lấy dữ liệu từ máy này</h4>
+                            </div>
+                            <p className="text-xs text-indigo-700 opacity-80 mb-3">Bấm nút bên dưới để copy toàn bộ dữ liệu hiện tại. Sau đó gửi đoạn chữ này sang thiết bị mới của bạn.</p>
+                            <button onClick={handleCopyExportData} className="w-full py-2.5 rounded-xl font-bold text-indigo-600 bg-white border border-indigo-200 shadow-sm hover:bg-indigo-50 transition-all flex justify-center items-center">
+                                <i className="fas fa-copy mr-2 text-sm"></i> Copy dữ liệu máy này
+                            </button>
+                            </div>
+
+                            <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
+                            <div className="flex items-center mb-2">
+                                <i className="fas fa-file-download text-green-600 mr-2 text-lg"></i>
+                                <h4 className="font-bold text-sm text-green-900">2. Phục hồi vào máy mới</h4>
+                            </div>
+                            <p className="text-xs text-green-700 opacity-80 mb-3">Dán đoạn dữ liệu bạn đã copy từ máy cũ vào ô dưới đây để phục hồi (sẽ ghi đè dữ liệu hiện tại).</p>
+                            <textarea placeholder="Dán mã dữ liệu vào đây..." value={importDataText} onChange={(e) => setImportDataText(e.target.value)} className="w-full h-24 text-xs font-mono bg-white text-gray-700 p-3 rounded-xl border border-green-200 outline-none resize-none focus:ring-1 focus:ring-green-500 mb-3" />
+                            <button onClick={handleImportData} className="w-full py-2.5 rounded-xl font-bold text-white bg-green-500 shadow-md shadow-green-200 hover:bg-green-600 transition-all flex justify-center items-center">
+                                <i className="fas fa-check-circle mr-2 text-sm"></i> Phục hồi dữ liệu
+                            </button>
+                            </div>
+                        </div>
+                        </div>
                     </div>
-                    <div className="flex items-center border border-gray-200 rounded-xl p-3 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all">
-                      <MoreHorizontal className="text-gray-400 mr-3" size={20} /><input type="text" placeholder="Ghi chú thêm (Tùy chọn)..." value={formNote} onChange={(e) => setFormNote(e.target.value)} className="w-full bg-transparent outline-none text-gray-700" />
-                    </div>
-                  </div>
-
-                  <button type="submit" className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-transform active:scale-[0.98] ${formType === 'expense' ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30' : 'bg-green-500 hover:bg-green-600 shadow-green-500/30'}`}>
-                    Lưu {formType === 'expense' ? 'Khoản Chi' : 'Khoản Thu'}
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL QUẢN LÝ DỮ LIỆU CỤC BỘ (SAO LƯU / PHỤC HỒI TEXT) */}
-        {isDataModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
-              <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
-                <h3 className="font-bold text-gray-800 flex items-center">
-                  <Database size={20} className="mr-2 text-indigo-500" /> Chuyển thiết bị thủ công
-                </h3>
-                <button onClick={() => setIsDataModalOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={20}/></button>
-              </div>
-              
-              <div className="p-5 overflow-y-auto space-y-6">
-                {/* Phần Xuất dữ liệu */}
-                <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
-                  <div className="flex items-center mb-2">
-                    <Upload size={18} className="text-indigo-600 mr-2" />
-                    <h4 className="font-bold text-sm text-indigo-900">1. Lấy dữ liệu từ máy này</h4>
-                  </div>
-                  <p className="text-xs text-indigo-700 opacity-80 mb-3">
-                    Bấm nút bên dưới để copy toàn bộ dữ liệu hiện tại. Sau đó gửi đoạn chữ này (qua Zalo, Email...) sang thiết bị mới của bạn.
-                  </p>
-                  <button 
-                    onClick={handleCopyExportData}
-                    className="w-full py-2.5 rounded-xl font-bold text-indigo-600 bg-white border border-indigo-200 shadow-sm hover:bg-indigo-50 transition-all flex justify-center items-center"
-                  >
-                    <Copy size={16} className="mr-2" /> Copy dữ liệu máy này
-                  </button>
+                    )}
                 </div>
-
-                {/* Phần Nhập dữ liệu */}
-                <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
-                  <div className="flex items-center mb-2">
-                    <Download size={18} className="text-green-600 mr-2" />
-                    <h4 className="font-bold text-sm text-green-900">2. Phục hồi vào máy mới</h4>
-                  </div>
-                  <p className="text-xs text-green-700 opacity-80 mb-3">
-                    Dán đoạn dữ liệu bạn đã copy từ máy cũ vào ô dưới đây để phục hồi (sẽ ghi đè dữ liệu hiện tại).
-                  </p>
-                  <textarea
-                    placeholder="Dán mã dữ liệu vào đây..."
-                    value={importDataText}
-                    onChange={(e) => setImportDataText(e.target.value)}
-                    className="w-full h-24 text-xs font-mono bg-white text-gray-700 p-3 rounded-xl border border-green-200 outline-none resize-none focus:ring-1 focus:ring-green-500 mb-3"
-                  />
-                  <button 
-                    onClick={handleImportData}
-                    className="w-full py-2.5 rounded-xl font-bold text-white bg-green-500 shadow-md shadow-green-200 hover:bg-green-600 transition-all flex justify-center items-center"
-                  >
-                    <CheckCircle2 size={16} className="mr-2" /> Phục hồi dữ liệu
-                  </button>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+            );
+        }
 
-      </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fade-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
-    </div>
-  );
-}
+        // --- RENDER ỨNG DỤNG ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
